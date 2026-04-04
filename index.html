@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="インスリン計算">
+  <meta name="theme-color" content="#f2f2f7">
+  <title>インスリンボーラス計算ツール</title>
+  <style>
+    :root {
+      --bg:#f2f2f7;--card:#fff;--sep:#c6c6c8;--label2:#8e8e93;
+      --blue:#007aff;--red:#ff3b30;--r:12px;
+      --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+      background:var(--bg);color:#1c1c1e;padding:0;
+      padding-top:var(--safe-top);padding-bottom:var(--safe-bot);
+      -webkit-font-smoothing:antialiased;min-height:100dvh;
+    }
+
+    /* Nav */
+    .nav{
+      position:sticky;top:0;z-index:100;
+      background:rgba(242,242,247,.85);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+      border-bottom:.5px solid var(--sep);padding:12px 16px;
+      text-align:center;
+    }
+    .nav h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
+
+    .scroll{padding:16px;padding-bottom:calc(32px + var(--safe-bot))}
+
+    /* Card */
+    .card{background:var(--card);border-radius:var(--r);margin-bottom:20px;overflow:hidden}
+    .card-header{
+      font-size:13px;font-weight:400;color:var(--label2);
+      text-transform:uppercase;letter-spacing:.5px;padding:8px 16px 6px;
+    }
+
+    /* Row */
+    .row{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:11px 16px;min-height:44px;border-bottom:.5px solid #e5e5ea;
+    }
+    .row:last-child{border-bottom:none}
+    .row-label{font-size:15px;color:#1c1c1e;flex-shrink:0}
+
+    /* Input */
+    input[type=number],select{
+      font-family:inherit;font-size:17px;color:var(--blue);
+      text-align:right;border:none;background:transparent;
+      padding:4px 0;width:100px;outline:none;
+      -moz-appearance:textfield;
+    }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+    select{width:auto;max-width:220px}
+
+    /* Segment */
+    .segment{display:flex;background:#e9e9eb;border-radius:8px;padding:2px;margin:0 16px 12px}
+    .seg-btn{
+      flex:1;text-align:center;font-size:13px;font-weight:500;
+      padding:6px 0;border-radius:7px;border:none;background:none;
+      color:#1c1c1e;cursor:pointer;transition:all .2s;
+    }
+    .seg-btn.active{
+      background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+      font-weight:600;
+    }
+
+    /* Toggle button (iOS style) */
+    .toggle-btn{
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      width:100%;padding:12px 16px;
+      background:var(--card);border:none;border-radius:var(--r);
+      font-size:15px;font-weight:500;color:var(--blue);
+      cursor:pointer;margin-bottom:20px;
+    }
+    .toggle-btn:active{background:#e8e8ed}
+    .toggle-arrow{
+      display:inline-block;transition:transform .25s;font-size:12px;
+    }
+    .toggle-arrow.open{transform:rotate(180deg)}
+
+    /* Collapsible */
+    .collapsible{
+      max-height:0;overflow:hidden;transition:max-height .35s ease;
+    }
+    .collapsible.open{max-height:2000px}
+
+    /* Result */
+    .result-card{background:var(--card);border-radius:var(--r);margin-bottom:20px;overflow:hidden}
+    .result-row{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:10px 16px;border-bottom:.5px solid #e5e5ea;font-size:15px;
+    }
+    .result-row:last-child{border-bottom:none}
+    .result-row .val{font-weight:500;font-variant-numeric:tabular-nums}
+    .result-total{
+      text-align:center;padding:16px;
+      background:linear-gradient(135deg,#e8f0fe,#dbeafe);border-top:.5px solid #bfdbfe;
+    }
+    .result-total .num{
+      font-size:34px;font-weight:700;color:var(--blue);
+      font-variant-numeric:tabular-nums;letter-spacing:-.5px;
+    }
+    .result-total .lbl{font-size:13px;color:var(--label2);margin-bottom:4px}
+
+    .note{font-size:13px;color:var(--label2);padding:6px 16px 12px;line-height:1.4}
+
+    /* Select full-width */
+    .select-wrap{padding:0 16px 12px}
+    .select-full{
+      width:100%;padding:10px;border-radius:8px;border:.5px solid #e5e5ea;
+      font-size:15px;color:#1c1c1e;background:#f9f9fb;
+      font-family:inherit;text-align:left;
+    }
+
+    /* Reset */
+    .reset-btn{
+      display:block;margin:12px 16px 4px;padding:12px;
+      background:var(--card);border:none;border-radius:var(--r);
+      color:var(--red);font-size:17px;text-align:center;cursor:pointer;
+      width:calc(100% - 32px);
+    }
+    .reset-btn:active{background:#f0f0f5}
+
+    /* Chart */
+    .chart-wrap{
+      background:#fbfbfd;border:.5px solid #e5e5ea;
+      border-radius:10px;padding:8px;margin:0 16px;
+    }
+    .legend{font-size:12px;color:var(--label2);display:flex;gap:12px;flex-wrap:wrap;margin:6px 16px 0}
+    .dot{width:8px;height:8px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:3px}
+    .chart-seg{margin:0 16px 8px}
+  </style>
+</head>
+<body>
+
+  <div class="nav"><h1>インスリンボーラス計算</h1></div>
+
+  <div class="scroll">
+
+    <!-- ⚙ Settings toggle -->
+    <button class="toggle-btn" onclick="toggle('settings')">
+      ⚙ 設定を開く／閉じる <span class="toggle-arrow" id="settingsArrow">▼</span>
+    </button>
+    <div class="collapsible" id="settings">
+      <p class="card-header">ICR（インスリン／カーボ比）</p>
+      <div class="card">
+        <div class="row"><span class="row-label">朝 ICR</span><input type="number" id="icrBreakfast" value="10" inputmode="decimal"></div>
+        <div class="row"><span class="row-label">昼 ICR</span><input type="number" id="icrLunch" value="10" inputmode="decimal"></div>
+        <div class="row"><span class="row-label">夕 ICR</span><input type="number" id="icrDinner" value="10" inputmode="decimal"></div>
+      </div>
+      <p class="card-header">補正設定</p>
+      <div class="card">
+        <div class="row"><span class="row-label">インスリン効果値 (ISF)</span><input type="number" id="isf" value="50" inputmode="decimal"></div>
+        <div class="row"><span class="row-label">目標血糖 (mg/dL)</span><input type="number" id="target" value="120" inputmode="decimal"></div>
+      </div>
+      <p class="card-header">注射ペンの単位刻み</p>
+      <div class="card">
+        <div class="row">
+          <span class="row-label">単位刻み</span>
+          <select id="rounding">
+            <option value="0.1">0.1</option>
+            <option value="0.5" selected>0.5</option>
+            <option value="1">1.0</option>
+          </select>
+        </div>
+      </div>
+      <button class="reset-btn" onclick="resetSettings()">設定をリセット</button>
+      <div style="height:12px"></div>
+    </div>
+
+    <!-- 食前入力 -->
+    <p class="card-header">食前入力（毎回入力）</p>
+    <div class="card">
+      <div class="row"><span class="row-label">食事時間帯</span></div>
+      <div class="segment" style="margin-top:0">
+        <button class="seg-btn active" data-meal="breakfast" onclick="setMeal('breakfast',this)">朝</button>
+        <button class="seg-btn" data-meal="lunch" onclick="setMeal('lunch',this)">昼</button>
+        <button class="seg-btn" data-meal="dinner" onclick="setMeal('dinner',this)">夕</button>
+      </div>
+      <div class="note">現在時刻に基づいて自動設定されます</div>
+      <div class="row">
+        <span class="row-label">炭水化物量 (g)</span>
+        <input type="number" id="carbs" value="100" inputmode="decimal">
+      </div>
+      <div class="row">
+        <span class="row-label">食前血糖 (mg/dL)</span>
+        <input type="number" id="bg" value="240" inputmode="decimal">
+      </div>
+    </div>
+
+    <p class="card-header">インスリン</p>
+    <div class="card">
+      <div class="row"><span class="row-label">使用インスリン</span></div>
+      <div class="select-wrap">
+        <select id="insulinType" class="select-full">
+          <option value="fiasp">フィアスプ／ルムジェブ（3.5h）</option>
+          <option value="apidra">アピドラ（グルリシン・3.5h）</option>
+          <option value="humalog">ヒューマログ／ノボラピッド（4h）</option>
+          <option value="regular">ノボリンR／ヒューマリンR（6.5h）</option>
+        </select>
+      </div>
+      <div class="row">
+        <span class="row-label">前回投与量 (U)</span>
+        <input type="number" id="prevDose" value="10" inputmode="decimal">
+      </div>
+      <div class="row">
+        <span class="row-label">経過時間 (h)</span>
+        <input type="number" id="elapsed" value="2" step="0.1" inputmode="decimal">
+      </div>
+      <div class="note">💡 R製剤以外なら4時間以上経過で入力不要です</div>
+      <div class="note" id="iobResult" style="color:var(--blue);font-weight:500">推定残存インスリン：0.00 U</div>
+    </div>
+
+    <!-- 結果 -->
+    <p class="card-header">計算結果</p>
+    <div class="result-card">
+      <div id="result-details"></div>
+      <div class="result-total">
+        <div class="lbl">推奨投与量</div>
+        <div class="num" id="result-total">0.00 U</div>
+      </div>
+    </div>
+
+    <!-- IOBチャート -->
+    <button class="toggle-btn" onclick="toggle('chart')">
+      📉 残存インスリン曲線 <span class="toggle-arrow" id="chartArrow">▼</span>
+    </button>
+    <div class="collapsible" id="chart">
+      <div class="segment chart-seg">
+        <button class="seg-btn active" onclick="setYScale('unit',this)">単位 (U)</button>
+        <button class="seg-btn" onclick="setYScale('pct',this)">％表示</button>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="iobCanvas" style="width:100%;height:200px"></canvas>
+      </div>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--blue)"></span>残存インスリン</span>
+        <span><span class="dot" style="background:var(--red)"></span>現在</span>
+      </div>
+      <div class="note" id="legendText" style="padding:4px 16px 12px"></div>
+    </div>
+  </div>
+
+<script>
+const K="insulinCalcSettings_v8";
+const E=id=>document.getElementById(id);
+const fmt=v=>Number(v.toFixed(2));
+const getDur=t=>(t==="regular"?6.5:((t==="apidra"||t==="fiasp")?3.5:4));
+
+let currentMeal="breakfast";
+let yScale="unit";
+
+function calcIOB(dose,t,d){if(t>=d)return 0;const x=t/d;return dose*(1-(3*x*x-2*x*x*x));}
+function getMealByTime(){const h=new Date().getHours();return h<11?"breakfast":(h<17?"lunch":"dinner");}
+
+/* Toggle collapsible */
+function toggle(id){
+  const el=E(id);
+  const arrow=E(id+'Arrow');
+  const open=el.classList.toggle('open');
+  if(arrow)arrow.classList.toggle('open',open);
+  if(id==='chart'&&open)setTimeout(()=>calc(),150);
+}
+
+function setMeal(m,btn){
+  currentMeal=m;
+  btn.parentElement.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  calc();
+}
+
+function setYScale(mode,btn){
+  yScale=mode;
+  btn.parentElement.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  calc();
+}
+
+function loadSettings(){
+  const s=JSON.parse(localStorage.getItem(K)||"{}");
+  for(const k in s){const el=E(k);if(el)el.value=s[k];}
+  const m=getMealByTime();currentMeal=m;
+  document.querySelectorAll('.seg-btn[data-meal]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.meal===m);
+  });
+}
+
+function saveSettings(){
+  const keys=['icrBreakfast','icrLunch','icrDinner','isf','target','rounding','insulinType','prevDose','elapsed'];
+  const d={};keys.forEach(k=>{const el=E(k);if(el)d[k]=el.value;});
+  localStorage.setItem(K,JSON.stringify(d));
+}
+
+function resetSettings(){
+  if(!confirm('すべての設定を初期値に戻しますか？'))return;
+  localStorage.removeItem(K);location.reload();
+}
+
+function calc(){
+  saveSettings();
+  const b=+E('icrBreakfast').value||0,l=+E('icrLunch').value||0,dn=+E('icrDinner').value||0;
+  const isf=+E('isf').value||0,target=+E('target').value||0,round=+E('rounding').value||0.5;
+  const carbs=+E('carbs').value||0,bg=+E('bg').value||0;
+  const prev=+E('prevDose').value||0,elap=+E('elapsed').value||0,insType=E('insulinType').value;
+  const dur=getDur(insType);
+  const iob=calcIOB(prev,elap,dur);
+  E('iobResult').textContent='推定残存インスリン：'+fmt(iob)+' U';
+  const icr=currentMeal==='breakfast'?b:(currentMeal==='lunch'?l:dn);
+  const carbB=icr>0?carbs/icr:0;
+  const corrB=isf>0?(bg-target)/isf:0;
+  const total=Math.max(0,carbB+corrB-iob);
+  const rounded=round>0?Math.round(total/round)*round:total;
+  E('result-details').innerHTML=
+    '<div class="result-row"><span>炭水化物ボーラス</span><span class="val">'+fmt(carbB)+' U</span></div>'+
+    '<div class="result-row"><span>補正ボーラス</span><span class="val">'+fmt(corrB)+' U</span></div>'+
+    '<div class="result-row"><span>残存インスリン差引</span><span class="val" style="color:var(--red)">-'+fmt(iob)+' U</span></div>';
+  E('result-total').textContent=fmt(rounded)+' U';
+  if(E('chart').classList.contains('open'))drawIOBChart(prev,dur,elap);
+}
+
+/* Chart */
+const canvas=E('iobCanvas');
+const ctx=canvas.getContext('2d');
+
+function resizeCanvas(){
+  const dpr=Math.max(window.devicePixelRatio||1,1);
+  const rect=canvas.getBoundingClientRect();
+  const w=rect.width||canvas.parentElement.clientWidth||600;
+  const h=rect.height||200;
+  canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function drawIOBChart(dose,dur,elapsed){
+  resizeCanvas();
+  const w=canvas.clientWidth,h=canvas.clientHeight;
+  const pL=40,pR=16,pT=16,pB=26;
+  const maxY=(yScale==='pct')?100:Math.max((dose>0?dose:1),1);
+  const xToPx=t=>pL+((w-pL-pR)*(t/dur));
+  const yToPx=v=>h-pB-((h-pT-pB)*(v/maxY));
+  ctx.clearRect(0,0,w,h);ctx.fillStyle="#fbfbfd";ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle="#e5e5ea";ctx.lineWidth=.5;ctx.beginPath();
+  const hourStep=Math.max(1,Math.round(dur/6));
+  for(let th=0;th<=dur;th+=hourStep){const x=xToPx(th);ctx.moveTo(x,pT);ctx.lineTo(x,h-pB);}
+  [0,.25,.5,.75,1].forEach(f=>{const y=yToPx(maxY*f);ctx.moveTo(pL,y);ctx.lineTo(w-pR,y);});
+  ctx.stroke();
+  ctx.strokeStyle="#c6c6c8";ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(pL,pT);ctx.lineTo(pL,h-pB);ctx.lineTo(w-pR,h-pB);ctx.stroke();
+  ctx.fillStyle="#8e8e93";ctx.font="11px -apple-system,system-ui,sans-serif";ctx.textAlign="center";
+  for(let th=0;th<=dur;th+=hourStep)ctx.fillText(th.toString(),xToPx(th),h-6);
+  ctx.save();ctx.translate(12,(h-pB+pT)/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText(yScale==='pct'?'残存[%]':'残存[U]',0,0);ctx.restore();
+  ctx.fillText('時間[h]',w-40,h-6);
+  ctx.strokeStyle="#007aff";ctx.lineWidth=2.5;ctx.beginPath();
+  let first=true;const steps=Math.max(120,Math.floor(dur*60));
+  for(let i=0;i<=steps;i++){
+    const t=dur*(i/steps);const x=t/dur;
+    const frac=(x>=1)?0:(1-(3*x*x-2*x*x*x));
+    const val=(yScale==='pct')?frac*100:dose*frac;
+    const px=xToPx(t),py=yToPx(val);
+    if(first){ctx.moveTo(px,py);first=false;}else{ctx.lineTo(px,py);}
+  }
+  ctx.stroke();
+  const clamped=Math.min(Math.max(elapsed,0),dur);
+  const xe=clamped/dur;const fr=(xe>=1)?0:(1-(3*xe*xe-2*xe*xe*xe));
+  const valE=(yScale==='pct')?fr*100:dose*fr;
+  const mx=xToPx(clamped),my=yToPx(valE);
+  ctx.strokeStyle="#ff3b30";ctx.lineWidth=1;
+  ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(mx,pT);ctx.lineTo(mx,h-pB);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#ff3b30";ctx.beginPath();ctx.arc(mx,my,4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(mx,my,1.5,0,Math.PI*2);ctx.fill();
+  E('legendText').textContent='用量 '+dose+' U ／ 作用時間 '+dur.toFixed(1)+'h ／ 現在 '+clamped.toFixed(2)+'h';
+}
+
+document.querySelectorAll('input,select').forEach(e=>{e.addEventListener('input',calc);e.addEventListener('change',calc);});
+window.addEventListener('resize',()=>{clearTimeout(window._r);window._r=setTimeout(calc,150);});
+
+loadSettings();calc();
+</script>
+</body>
+</html>
