@@ -75,10 +75,12 @@
         <div>
           <label>使用インスリン</label>
           <select id="insulinType">
-            <option value="fiasp">フィアスプ／ルムジェブ（3.5h）</option>
-            <option value="apidra">アピドラ（グルリシン・3.5h）</option>
-            <option value="humalog">ヒューマログ／ノボラピッド（4h）</option>
-            <option value="regular">ノボリンR／ヒューマリンR（6.5h）</option>
+            <option value="lumjev">ルムジェブ（2.5h）</option>
+            <option value="fiasp">フィアスプ（3.5h）</option>
+            <option value="apidra">アピドラ・グルリジン（3h）</option>
+            <option value="humalog">ヒューマログ、リスプロ（4h）</option>
+            <option value="novorapid">ノボラピッド、アスパルト（5h）</option>
+            <option value="regular">ノボリンR（6.5h）</option>
           </select>
         </div>
         <div><label>前回投与量 (U)</label><input type="number" id="prevDose" value="10"></div>
@@ -128,7 +130,7 @@
       }
     };
     const fmt = (v) => Number(v.toFixed(2));
-    const getDur = (t) => (t === "regular" ? 6.5 : ((t === "apidra" || t === "fiasp") ? 3.5 : 4));
+    const getDur = (t) => ({lumjev:2.5, fiasp:3.5, apidra:3, humalog:4, novorapid:5, regular:6.5}[t] || 4);
 
     function calcIOB(dose, t, d){
       if(t >= d) return 0;
