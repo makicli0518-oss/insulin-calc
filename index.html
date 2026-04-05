@@ -32,7 +32,7 @@
     .note{font-size:.8rem;color:#2563eb;margin-top:4px}
     #settingsPanel,#iobChartPanel{display:none}
     .fixed-top{position:sticky;top:0;background:var(--bg);z-index:10;padding-bottom:6px;display:flex;justify-content:space-between;align-items:center}
-    .settings-link{background:#f1f5f9;border:1px solid var(--grid);color:#475569;font-size:.9rem;font-weight:600;cursor:pointer;padding:8px 16px;margin:0;min-height:auto;width:auto;border-radius:8px;transition:all .15s}
+    .settings-link{background:#f1f5f9;border:1px solid var(--grid);color:#475569;font-size:.8rem;font-weight:600;cursor:pointer;padding:6px 12px;margin:0;min-height:auto;width:auto;border-radius:6px;transition:all .15s}
     .settings-link:hover{background:#e2e8f0;color:var(--btn);border-color:var(--btn)}
     .chart-wrap{margin-top:10px;border:1px solid var(--grid);border-radius:10px;padding:8px;background:#fff}
     .legend{font-size:.8rem;color:#334155;display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
@@ -70,7 +70,9 @@
       </div>
       <div class="grid grid-3" style="margin-top:10px">
         <div><label>インスリン効果値 (ISF)</label><input type="number" id="isf" value="50" inputmode="decimal"></div>
-        <div><label>目標血糖 (mg/dL)</label><input type="number" id="target" value="120" inputmode="decimal"></div>
+        <div><label>目標血糖 (mg/dL)</label>
+          <select id="target"><option value="100">100</option><option value="110">110</option><option value="120" selected>120</option><option value="150">150</option></select>
+        </div>
         <div><label>注射ペンの単位刻み</label>
           <select id="rounding"><option value="0.5">0.5</option><option value="1">1.0</option><option value="0.1">0.1</option></select>
         </div>
