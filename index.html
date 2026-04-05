@@ -14,87 +14,111 @@
     h1{font-size:1.4rem;margin:0 0 8px}
     section{background:var(--panel);border-radius:12px;padding:14px;margin-top:14px;box-shadow:0 2px 6px var(--panel-shadow)}
     label{font-size:.9rem;font-weight:600;color:#1e3a8a;display:block;margin-bottom:4px}
-    input,select,button{width:100%;padding:8px 10px;border:1px solid var(--muted);border-radius:8px;font-size:14px}
-    input[type=number]{background-color:var(--input-bg)}
+    input,select,button{width:100%;padding:12px 10px;border:1px solid var(--muted);border-radius:8px;font-size:16px;min-height:48px}
+    input[type=number]{background-color:var(--input-bg);-moz-appearance:textfield}
+    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
     button{background:var(--btn);color:#fff;border:none;cursor:pointer;margin-top:10px}
     button:hover{background:var(--btn-hover)}
     .grid{display:grid;gap:10px}
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
     @media(max-width:640px){.grid-3{grid-template-columns:1fr}}
-    .result{background:#eff6ff;border:2px solid #93c5fd;border-radius:10px;padding:10px;margin-top:6px;text-align:center;font-size:1.1rem;font-weight:700;color:#1e40af}
+    .result{background:#eff6ff;border:2px solid #93c5fd;border-radius:10px;padding:16px;margin-top:6px;text-align:center;font-size:2rem;font-weight:700;color:#1e40af}
+    .result-warn{background:#fef2f2;border-color:#fca5a5;color:#dc2626;font-size:1rem}
+    .warn-note{background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;padding:8px 12px;margin-top:6px;font-size:.85rem;color:#92400e;font-weight:600}
+    .iob-toggle{display:flex;gap:8px;margin-top:10px;margin-bottom:6px}
+    .iob-toggle-btn{flex:1;padding:10px 0;border:2px solid var(--muted);border-radius:8px;background:#fff;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;min-height:48px}
+    .iob-toggle-btn:hover{border-color:var(--btn);color:var(--btn)}
+    .iob-toggle-btn.active{background:var(--btn);color:#fff;border-color:var(--btn)}
     .note{font-size:.8rem;color:#2563eb;margin-top:4px}
     #settingsPanel,#iobChartPanel{display:none}
-    .fixed-top{position:sticky;top:0;background:var(--bg);z-index:10;padding-bottom:6px}
+    .fixed-top{position:sticky;top:0;background:var(--bg);z-index:10;padding-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+    .settings-link{background:#f1f5f9;border:1px solid var(--grid);color:#475569;font-size:.9rem;font-weight:600;cursor:pointer;padding:8px 16px;margin:0;min-height:auto;width:auto;border-radius:8px;transition:all .15s}
+    .settings-link:hover{background:#e2e8f0;color:var(--btn);border-color:var(--btn)}
     .chart-wrap{margin-top:10px;border:1px solid var(--grid);border-radius:10px;padding:8px;background:#fff}
     .legend{font-size:.8rem;color:#334155;display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
     .dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:var(--accent)}
     .dot-marker{background:var(--marker)}
     .muted{color:#64748b;font-size:.75rem}
+    .meal-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+    .meal-btn{padding:10px 0;border:2px solid var(--muted);border-radius:8px;background:#fff;color:var(--text);font-size:15px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s}
+    .meal-btn:hover{border-color:var(--btn);color:var(--btn)}
+    .meal-btn.active{background:var(--btn);color:#fff;border-color:var(--btn)}
+    .ins-check-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+    .ins-check-group label{display:flex;align-items:center;gap:4px;font-weight:400;font-size:.82rem;background:#f1f5f9;border:1px solid var(--grid);border-radius:6px;padding:4px 8px;cursor:pointer;margin-bottom:0}
+    .ins-check-group label:has(input:checked){background:#dbeafe;border-color:#3b82f6;color:#1e40af;font-weight:600}
+    .ins-check-group input[type=checkbox]{width:auto;margin:0}
   </style>
 </head>
 <body>
   <div class="container">
     <div class="fixed-top">
       <h1>インスリンボーラス計算ツール</h1>
-      <button onclick="tg('settingsPanel')">⚙ 設定を開く／閉じる</button>
+      <button class="settings-link" onclick="tg('settingsPanel')">⚙ 設定</button>
     </div>
 
     <section id="settingsPanel">
       <h2>設定</h2>
       <div class="grid grid-3">
-        <div><label>朝 ICR</label><input type="number" id="icrBreakfast" value="10"></div>
-        <div><label>昼 ICR</label><input type="number" id="icrLunch" value="10"></div>
-        <div><label>夕 ICR</label><input type="number" id="icrDinner" value="10"></div>
+        <div><label>朝 ICR</label><input type="number" id="icrBreakfast" value="10" inputmode="decimal"></div>
+        <div><label>昼 ICR</label><input type="number" id="icrLunch" value="10" inputmode="decimal"></div>
+        <div><label>夕 ICR</label><input type="number" id="icrDinner" value="10" inputmode="decimal"></div>
       </div>
       <div class="grid grid-3" style="margin-top:10px">
-        <div><label>インスリン効果値 (ISF)</label><input type="number" id="isf" value="50"></div>
-        <div><label>目標血糖 (mg/dL)</label><input type="number" id="target" value="120"></div>
+        <div><label>朝 使用インスリン</label><div class="ins-check-group" id="chkBreakfast"></div></div>
+        <div><label>昼 使用インスリン</label><div class="ins-check-group" id="chkLunch"></div></div>
+        <div><label>夕 使用インスリン</label><div class="ins-check-group" id="chkDinner"></div></div>
+      </div>
+      <div class="grid grid-3" style="margin-top:10px">
+        <div><label>インスリン効果値 (ISF)</label><input type="number" id="isf" value="50" inputmode="decimal"></div>
+        <div><label>目標血糖 (mg/dL)</label><input type="number" id="target" value="120" inputmode="decimal"></div>
         <div><label>注射ペンの単位刻み</label>
           <select id="rounding"><option value="0.5">0.5</option><option value="1">1.0</option><option value="0.1">0.1</option></select>
         </div>
+        <div><label>1回の最大投与量 (U)</label><input type="number" id="maxDose" placeholder="例: 30" inputmode="decimal"></div>
       </div>
       <button id="resetSettings">設定リセット</button>
     </section>
 
     <section>
       <h2>食前入力（毎回入力）</h2>
-      <label>食事時間帯（自動判定＋手動変更可）</label>
-      <select id="meal">
-        <option value="breakfast">朝（0〜11時）</option>
-        <option value="lunch">昼（11〜17時）</option>
-        <option value="dinner">夕（17〜24時）</option>
-      </select>
-      <p class="note">※ 現在時刻に基づいて自動設定されますが、必要に応じて変更可能です。</p>
+      <label>食事時間帯</label>
+      <div class="meal-btns">
+        <button type="button" class="meal-btn" data-meal="breakfast">朝食</button>
+        <button type="button" class="meal-btn" data-meal="lunch">昼食</button>
+        <button type="button" class="meal-btn" data-meal="dinner">夕食</button>
+      </div>
+      <input type="hidden" id="meal" value="breakfast">
+      <p class="note">※ 自動選択されています。違う場合はタップで変更</p>
 
       <div class="grid grid-3" style="margin-top:10px">
-        <div><label>炭水化物量 (g)</label><input type="number" id="carbs" value="100"></div>
-        <div><label>食前血糖 (mg/dL)</label><input type="number" id="bg" value="240"></div>
+        <div><label>炭水化物量 (g)</label><input type="number" id="carbs" placeholder="例: 100" inputmode="decimal"></div>
+        <div><label>食前血糖 (mg/dL)</label><input type="number" id="bg" placeholder="例: 240" inputmode="decimal"></div>
       </div>
 
-      <div class="grid grid-3" style="margin-top:10px">
-        <div>
-          <label>使用インスリン</label>
-          <select id="insulinType">
-            <option value="lumjev">ルムジェブ（2.5h）</option>
-            <option value="fiasp">フィアスプ（3.5h）</option>
-            <option value="apidra">アピドラ・グルリジン（3h）</option>
-            <option value="humalog">ヒューマログ、リスプロ（4h）</option>
-            <option value="novorapid">ノボラピッド、アスパルト（5h）</option>
-            <option value="regular">ノボリンR（6.5h）</option>
-          </select>
+      <div style="margin-top:10px">
+        <label>使用インスリン</label>
+        <select id="insulinType"></select>
+      </div>
+
+      <label style="margin-top:10px" id="iobQuestion">前回の注射から4時間以上経過していますか？</label>
+      <div class="iob-toggle">
+        <button type="button" class="iob-toggle-btn active" id="iobYes" onclick="setIobSkip(true)">はい（残存インスリン計算不要）</button>
+        <button type="button" class="iob-toggle-btn" id="iobNo" onclick="setIobSkip(false)">いいえ</button>
+      </div>
+      <div id="iobFields" style="display:none">
+        <div class="grid grid-3">
+          <div><label>前回投与量 (U)</label><input type="number" id="prevDose" value="10" inputmode="decimal"></div>
+          <div><label>経過時間 (h)</label><input type="number" step="0.1" id="elapsed" value="2" inputmode="decimal"></div>
         </div>
-        <div><label>前回投与量 (U)</label><input type="number" id="prevDose" value="10"></div>
-        <div><label>経過時間 (h)</label><input type="number" step="0.1" id="elapsed" value="2"></div>
+        <p class="note" id="iobResult">推定残存インスリン：0.00 U（Walshモデル）</p>
       </div>
-
-      <p class="note">💡 残存インスリン（IOB）は、R製剤以外なら4時間以上経過で入力不要です。</p>
-      <p class="note" id="iobResult">推定残存インスリン：0.00 U（Walshモデル）</p>
     </section>
 
     <section>
       <h2>結果</h2>
+      <div id="result-warn"></div>
       <div id="result-details"></div>
-      <div class="result" id="result-total">推奨投与量：0.00 U</div>
+      <div class="result" id="result-total">推奨投与量：--- U</div>
     </section>
 
     <section>
@@ -109,19 +133,37 @@
         </div>
         <div class="chart-wrap">
           <canvas id="iobCanvas" style="width:100%;height:200px"></canvas>
-          <div class="legend">
-            <span><span class="dot"></span> 残存インスリン曲線</span>
-            <span><span class="dot dot-marker"></span> 現在</span>
-            <span class="muted" id="legendText"></span>
-          </div>
+          <div style="font-size:12px; color:#64748b; margin-top:4px; text-align:right;" id="legendText"></div>
         </div>
       </div>
     </section>
   </div>
 
   <script>
-    const K = "insulinCalcSettings_v7";
+    const K = "insulinCalcSettings_v9";
     const E = (id) => document.getElementById(id);
+    const insulinOptions = [
+      {value:'lumjev', label:'ルムジェブ（2.5h）'},
+      {value:'fiasp', label:'フィアスプ（3.5h）'},
+      {value:'apidra', label:'アピドラ・グルリジン（3h）'},
+      {value:'humalog', label:'ヒューマログ、リスプロ（4h）'},
+      {value:'novorapid', label:'ノボラピッド、アスパルト（5h）'},
+      {value:'regular', label:'ノボリンR（6.5h）'}
+    ];
+    // 設定の各食チェックボックスを生成
+    const mealKeys = ['Breakfast','Lunch','Dinner'];
+    mealKeys.forEach(mk=>{
+      const container = E('chk'+mk);
+      insulinOptions.forEach(o=>{
+        const lbl = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = o.value;
+        cb.name = 'ins'+mk; cb.checked = false;
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(o.label));
+        container.appendChild(lbl);
+      });
+    });
     const tg = (id) => {
       const p = E(id);
       p.style.display = (!p.style.display || p.style.display === "none") ? "block" : "none";
@@ -143,13 +185,57 @@
     }
     function loadSettings(){
       const s = JSON.parse(localStorage.getItem(K) || "{}");
-      for(const k in s){ const el = E(k); if(el) el.value = s[k]; }
-      E('meal').value = getMealByTime();
+      for(const k in s){
+        const el = E(k);
+        if(el && el.tagName) el.value = s[k];
+      }
+      // 各食チェック状態を復元
+      mealKeys.forEach(mk=>{
+        const saved = s['ins'+mk];
+        if(Array.isArray(saved)){
+          document.querySelectorAll('input[name="ins'+mk+'"]').forEach(cb=>{
+            cb.checked = saved.includes(cb.value);
+          });
+        }
+      });
+      const m = getMealByTime();
+      E('meal').value = m;
+      document.querySelectorAll('.meal-btn').forEach(b=>{
+        b.classList.toggle('active', b.dataset.meal === m);
+      });
     }
     function saveSettings(){
-      const keys=['icrBreakfast','icrLunch','icrDinner','isf','target','rounding','insulinType','prevDose','elapsed'];
+      const keys=['icrBreakfast','icrLunch','icrDinner','isf','target','rounding','insulinType','prevDose','elapsed','maxDose'];
       const d={}; keys.forEach(k=>{ const el=E(k); if(el) d[k]=el.value; });
+      // 各食のチェック状態を保存
+      mealKeys.forEach(mk=>{
+        const checked = [...document.querySelectorAll('input[name="ins'+mk+'"]:checked')].map(cb=>cb.value);
+        d['ins'+mk] = checked;
+      });
       localStorage.setItem(K, JSON.stringify(d));
+    }
+    function updateIobQuestion(){
+      const dur = getDur(E('insulinType').value);
+      E('iobQuestion').textContent = `前回の注射から${dur}時間以上経過していますか？`;
+    }
+    function syncInsulinToMeal(){
+      const meal = E('meal').value;
+      const mkMap = {breakfast:'Breakfast', lunch:'Lunch', dinner:'Dinner'};
+      const mk = mkMap[meal];
+      const checked = [...document.querySelectorAll('input[name="ins'+mk+'"]:checked')].map(cb=>cb.value);
+      const sel = E('insulinType');
+      const prev = sel.value;
+      // 選択肢を再構築（チェックされたもののみ）
+      sel.innerHTML = '';
+      const filtered = checked.length > 0 ? insulinOptions.filter(o=>checked.includes(o.value)) : insulinOptions;
+      filtered.forEach(o=>{
+        const opt = document.createElement('option');
+        opt.value = o.value; opt.textContent = o.label;
+        sel.appendChild(opt);
+      });
+      // 以前の選択が残っていればそれを維持
+      if(filtered.some(o=>o.value===prev)) sel.value = prev;
+      updateIobQuestion();
     }
     E('resetSettings').addEventListener('click',()=>{
       localStorage.removeItem(K);
@@ -157,16 +243,49 @@
       location.reload();
     });
 
+    let iobSkip = true;
+    function setIobSkip(skip){
+      iobSkip = skip;
+      E('iobYes').classList.toggle('active', skip);
+      E('iobNo').classList.toggle('active', !skip);
+      E('iobFields').style.display = skip ? 'none' : 'block';
+      calc();
+    }
+
     function calc(){
       saveSettings();
       const b=+E('icrBreakfast').value||0, l=+E('icrLunch').value||0, dn=+E('icrDinner').value||0;
       const isf=+E('isf').value||0, target=+E('target').value||0, round=+E('rounding').value||0.5;
-      const meal=E('meal').value, carbs=+E('carbs').value||0, bg=+E('bg').value||0;
-      const prev=+E('prevDose').value||0, elap=+E('elapsed').value||0, insType=E('insulinType').value;
+      const meal=E('meal').value;
+      const carbsVal=E('carbs').value, bgVal=E('bg').value;
+      const carbs=+carbsVal||0, bg=+bgVal||0;
+      const insType=E('insulinType').value;
       const dur = getDur(insType);
 
-      const iob = calcIOB(prev, elap, dur);
-      E('iobResult').textContent = `推定残存インスリン：${fmt(iob)} U（Walshモデル）`;
+      // IOB
+      let iob = 0;
+      if(!iobSkip){
+        const prev=+E('prevDose').value||0, elap=+E('elapsed').value||0;
+        iob = calcIOB(prev, elap, dur);
+        E('iobResult').textContent = `推定残存インスリン：${fmt(iob)} U（Walshモデル）`;
+        drawIOBChart(prev, dur, elap);
+      }
+
+      // 未入力チェック
+      const warns = [];
+      const missing = carbsVal==='' || bgVal==='';
+      if(carbsVal==='') warns.push('炭水化物量が未入力です');
+      if(bgVal==='') warns.push('食前血糖が未入力です');
+      if(bg > 0 && bg < target) warns.push('血糖値が目標値より低いです（補正がマイナスになります）');
+
+      E('result-warn').innerHTML = warns.map(w=>'<div class="warn-note">'+w+'</div>').join('');
+
+      if(missing){
+        E('result-details').innerHTML = '';
+        E('result-total').textContent = '推奨投与量：--- U';
+        E('result-total').classList.add('result-warn');
+        return;
+      }
 
       const icr = meal==='breakfast'? b : (meal==='lunch'? l : dn);
       const carbB = icr>0 ? carbs/icr : 0;
@@ -176,9 +295,21 @@
 
       E('result-details').innerHTML =
         `炭水化物ボーラス：${fmt(carbB)} U<br>補正ボーラス：${fmt(corrB)} U<br>残存インスリン差し引き：-${fmt(iob)} U`;
-      E('result-total').textContent = `推奨投与量：${fmt(rounded)} U`;
+      const insName = insulinOptions.find(o=>o.value===insType);
+      const insLabel = insName ? insName.label.replace(/（.+）/,'') : '';
+      E('result-total').textContent = `推奨投与量：${fmt(rounded)} U（${insLabel}）`;
+      E('result-total').classList.remove('result-warn');
 
-      drawIOBChart(prev, dur, elap);
+      const maxDose = +E('maxDose').value;
+      if(maxDose > 0 && rounded > maxDose){
+        warns.push(`設定した最大投与量（${maxDose} U）を超えています。入力値を確認してください`);
+        E('result-warn').innerHTML = warns.map(w=>'<div class="warn-note">'+w+'</div>').join('');
+      }
+
+      if(!iobSkip){
+        const prev=+E('prevDose').value||0, elap=+E('elapsed').value||0;
+        drawIOBChart(prev, dur, elap);
+      }
     }
 
     const canvas = E('iobCanvas');
@@ -196,71 +327,167 @@
 
     function drawIOBChart(dose, dur, elapsed){
       resizeCanvas();
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
+      const w = canvas.clientWidth, h = canvas.clientHeight;
       const pL=40, pR=16, pT=16, pB=26;
       const yMode = (document.querySelector('input[name="yScale"]:checked')||{value:'unit'}).value;
       const maxY = (yMode==='pct') ? 100 : Math.max((dose>0?dose:1), 1);
       const xToPx = t => pL + ((w - pL - pR) * (t / dur));
       const yToPx = v => h - pB - ((h - pT - pB) * (v / maxY));
+      const walshFrac = x => (x>=1)?0:(1 - (3*x*x - 2*x*x*x));
+      const STEPS = 120;
 
       ctx.clearRect(0,0,w,h);
       ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
 
-      // grid
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid') || '#e2e8f0';
+      // --- Fill: consumed area (0 to elapsed, under curve) ---
+      const clamped = Math.min(Math.max(elapsed,0), dur);
+      const xe = clamped/dur;
+      const fr = walshFrac(xe);
+      const valE = (yMode==='pct') ? fr*100 : dose*fr;
+      const mx = xToPx(clamped), my = yToPx(valE);
+      const topY = yToPx(maxY);
+      const bottomY = yToPx(0);
+
+      ctx.fillStyle = 'rgba(234, 88, 12, 0.15)';
       ctx.beginPath();
-      const hourStep = Math.max(1, Math.round(dur/6));
-      for(let th=0; th<=dur; th+=hourStep){
-        const x = xToPx(th); ctx.moveTo(x,pT); ctx.lineTo(x,h-pB);
+      ctx.moveTo(pL, bottomY);
+      for(let i=0;i<=STEPS;i++){
+        const t = clamped*(i/STEPS);
+        const fv = walshFrac(t/dur);
+        const val = (yMode==='pct') ? fv*100 : dose*fv;
+        ctx.lineTo(xToPx(t), yToPx(val));
       }
+      ctx.lineTo(mx, bottomY);
+      ctx.closePath(); ctx.fill();
+
+      // --- Fill: remaining area (elapsed to end, under curve) ---
+      ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
+      ctx.beginPath();
+      ctx.moveTo(mx, bottomY);
+      for(let i=0;i<=STEPS;i++){
+        const t = clamped + (dur-clamped)*(i/STEPS);
+        const fv = walshFrac(t/dur);
+        const val = (yMode==='pct') ? fv*100 : dose*fv;
+        ctx.lineTo(xToPx(t), yToPx(val));
+      }
+      ctx.lineTo(xToPx(dur), bottomY);
+      ctx.closePath(); ctx.fill();
+
+      // --- Horizontal dashed line at current remaining level ---
+      ctx.strokeStyle = 'rgba(37, 99, 235, 0.4)';
+      ctx.setLineDash([3,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(pL, my); ctx.lineTo(mx, my); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Grid
+      ctx.strokeStyle = '#e2e8f0'; ctx.beginPath();
+      const hourStep = Math.max(1, Math.round(dur/6));
+      for(let th=0;th<=dur;th+=hourStep){ const x=xToPx(th); ctx.moveTo(x,pT); ctx.lineTo(x,h-pB); }
       [0,.25,.5,.75,1].forEach(f=>{ const y=yToPx(maxY*f); ctx.moveTo(pL,y); ctx.lineTo(w-pR,y); });
       ctx.stroke();
 
-      // axes
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--axis') || '#94a3b8';
-      ctx.beginPath(); ctx.moveTo(pL,pT); ctx.lineTo(pL,h-pB); ctx.lineTo(w-pR,h-pB); ctx.stroke();
+      // Axes
+      ctx.strokeStyle='#94a3b8'; ctx.beginPath(); ctx.moveTo(pL,pT); ctx.lineTo(pL,h-pB); ctx.lineTo(w-pR,h-pB); ctx.stroke();
 
-      // labels
-      ctx.fillStyle="#334155"; ctx.font="12px system-ui"; ctx.textAlign="center";
-      for(let th=0; th<=dur; th+=hourStep) ctx.fillText(th.toString(), xToPx(th), h-6);
+      // Axis labels
+      ctx.fillStyle='#334155'; ctx.font='12px system-ui'; ctx.textAlign='center';
+      for(let th=0;th<=dur;th+=hourStep) ctx.fillText(th.toString(), xToPx(th), h-6);
       ctx.save(); ctx.translate(10,(h-pB+pT)/2); ctx.rotate(-Math.PI/2);
       ctx.fillText(yMode==='pct'?'残存[%]':'残存[U]',0,0); ctx.restore();
-      ctx.fillText('時間[h]', w-70, h-6);
 
-      // curve
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#1e40af';
-      ctx.beginPath();
-      let first=true, steps=Math.max(120, Math.floor(dur*60));
-      for(let i=0;i<=steps;i++){
-        const t = dur*(i/steps);
-        const x = t/dur;
-        const frac = (x>=1)?0:(1 - (3*x*x - 2*x*x*x));
-        const val = (yMode==='pct') ? frac*100 : dose*frac;
-        const px = xToPx(t), py = yToPx(val);
-        if(first){ ctx.moveTo(px,py); first=false; } else { ctx.lineTo(px,py); }
+      // Curve
+      ctx.strokeStyle='#1e40af'; ctx.lineWidth=2; ctx.beginPath();
+      let first=true;
+      for(let i=0;i<=STEPS;i++){
+        const t=dur*(i/STEPS), fv=walshFrac(t/dur);
+        const val=(yMode==='pct')?fv*100:dose*fv;
+        const px=xToPx(t), py=yToPx(val);
+        if(first){ctx.moveTo(px,py);first=false;}else ctx.lineTo(px,py);
       }
-      ctx.stroke();
+      ctx.stroke(); ctx.lineWidth=1;
 
-      // marker
-      const clamped = Math.min(Math.max(elapsed,0), dur);
-      const xe = clamped/dur;
-      const fr = (xe>=1)?0:(1 - (3*xe*xe - 2*xe*xe*xe));
-      const valE = (yMode==='pct') ? fr*100 : dose*fr;
-      const mx = xToPx(clamped), my = yToPx(valE);
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--marker') || '#dc2626';
-      ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(mx,pT); ctx.lineTo(mx,h-pB); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--marker') || '#dc2626';
-      ctx.beginPath(); ctx.arc(mx,my,3,0,Math.PI*2); ctx.fill();
-      E('legendText').textContent = `用量: ${dose} U / 作用時間: ${dur.toFixed(1)} h / 現在: ${clamped.toFixed(2)} h`;
+      // Vertical marker line
+      ctx.strokeStyle='#dc2626'; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(mx,pT); ctx.lineTo(mx,h-pB); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Marker dot
+      ctx.fillStyle='#dc2626';
+      ctx.beginPath(); ctx.arc(mx,my,5,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(mx,my,5,0,Math.PI*2); ctx.stroke();
+      ctx.lineWidth=1;
+
+      // --- Label next to marker ---
+      const iobU = dose*fr;
+      const iobPct = Math.round(fr*100);
+      const labelText = (yMode==='pct')
+        ? iobPct+'%'
+        : fmt(iobU)+' U ('+iobPct+'%)';
+      ctx.font='bold 12px system-ui'; ctx.textAlign='left';
+      const labelX=mx+8, labelY=my-8;
+      const tm=ctx.measureText(labelText);
+      const lbW=tm.width+8, lbH=18;
+      const lbX=labelX-4, lbY=labelY-13;
+      const actualLbX=(lbX+lbW>w-pR)?mx-lbW-8:lbX;
+      const actualLabelX=(lbX+lbW>w-pR)?mx-tm.width-12:labelX;
+      ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.strokeStyle='#dc2626'; ctx.lineWidth=1.5;
+      const rr=6;
+      ctx.beginPath();
+      ctx.moveTo(actualLbX+rr,lbY); ctx.lineTo(actualLbX+lbW-rr,lbY);
+      ctx.quadraticCurveTo(actualLbX+lbW,lbY,actualLbX+lbW,lbY+rr);
+      ctx.lineTo(actualLbX+lbW,lbY+lbH-rr);
+      ctx.quadraticCurveTo(actualLbX+lbW,lbY+lbH,actualLbX+lbW-rr,lbY+lbH);
+      ctx.lineTo(actualLbX+rr,lbY+lbH);
+      ctx.quadraticCurveTo(actualLbX,lbY+lbH,actualLbX,lbY+lbH-rr);
+      ctx.lineTo(actualLbX,lbY+rr);
+      ctx.quadraticCurveTo(actualLbX,lbY,actualLbX+rr,lbY);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.lineWidth=1; ctx.fillStyle='#dc2626'; ctx.textAlign='left';
+      ctx.fillText(labelText, actualLabelX, labelY);
+
+      // --- Legend with summary badge ---
+      const legendEl = E('legendText');
+      const remainU = fmt(iobU);
+      const doseStr = dose>0?dose:0;
+      legendEl.innerHTML =
+        '<div style="display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px;">' +
+        '<span style="color:#64748b">用量: '+doseStr+' U / 作用時間: '+dur.toFixed(1)+' h / 経過: '+clamped.toFixed(1)+' h</span>' +
+        '<span style="display:inline-block;background:#eff6ff;border:1.5px solid #3b82f6;border-radius:999px;padding:2px 10px;font-weight:800;font-size:13px;color:#1e40af;">' +
+        '残存：'+remainU+' U / '+doseStr+' U（'+iobPct+'%）</span>' +
+        '</div>';
     }
 
     document.querySelectorAll('input,select').forEach(e=>{ e.addEventListener('input',calc); e.addEventListener('change',calc); });
+    E('insulinType').addEventListener('change', updateIobQuestion);
     document.querySelectorAll('input[name="yScale"]').forEach(e=> e.addEventListener('change',calc) );
     window.addEventListener('resize', ()=>{ clearTimeout(window._r); window._r = setTimeout(calc,150); } );
 
+    // 食事時間帯ボタン
+    function setMeal(val){
+      E('meal').value = val;
+      document.querySelectorAll('.meal-btn').forEach(b=>{
+        b.classList.toggle('active', b.dataset.meal === val);
+      });
+      syncInsulinToMeal();
+      calc();
+    }
+    document.querySelectorAll('.meal-btn').forEach(b=>{
+      b.addEventListener('click', ()=> setMeal(b.dataset.meal));
+    });
+
+    // フォーカス時に全選択（タップ→即上書き可能）
+    document.querySelectorAll('input[type="number"]').forEach(el=>{
+      el.addEventListener('focus', ()=>{ el.select(); });
+    });
+
+    // 設定のインスリンチェック変更 → 毎回入力エリアの選択肢を更新
+    document.querySelectorAll('.ins-check-group input[type="checkbox"]').forEach(cb=>{
+      cb.addEventListener('change', ()=>{ syncInsulinToMeal(); calc(); });
+    });
+
     // init
-    loadSettings(); calc();
+    loadSettings(); syncInsulinToMeal(); calc();
 
     // PWA register
     if('serviceWorker' in navigator){
