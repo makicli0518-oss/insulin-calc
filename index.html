@@ -17,6 +17,7 @@
     input,select,button{width:100%;padding:12px 10px;border:1px solid var(--muted);border-radius:8px;font-size:16px;min-height:48px}
     input[type=number]{background-color:var(--input-bg);-moz-appearance:textfield}
     input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+    input[type=text]{background-color:var(--input-bg)}
     button{background:var(--btn);color:#fff;border:none;cursor:pointer;margin-top:10px}
     button:hover{background:var(--btn-hover)}
     .grid{display:grid;gap:10px}
@@ -47,6 +48,16 @@
     .ins-check-group label{display:flex;align-items:center;gap:4px;font-weight:400;font-size:.82rem;background:#f1f5f9;border:1px solid var(--grid);border-radius:6px;padding:4px 8px;cursor:pointer;margin-bottom:0}
     .ins-check-group label:has(input:checked){background:#dbeafe;border-color:#3b82f6;color:#1e40af;font-weight:600}
     .ins-check-group input[type=checkbox]{width:auto;margin:0}
+
+    /* パターン切替 */
+    .pattern-bar{display:flex;gap:8px;margin-top:8px;margin-bottom:2px}
+    .pattern-btn{flex:1;padding:10px 0;border:2px solid var(--muted);border-radius:8px;background:#fff;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;min-height:44px}
+    .pattern-btn:hover{border-color:#8b5cf6;color:#8b5cf6}
+    .pattern-btn.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+    .pattern-label{font-size:.8rem;color:#6d28d9;font-weight:600;margin-bottom:2px}
+    .pattern-name-input{width:100%;padding:6px 8px;border:1px solid var(--grid);border-radius:6px;font-size:14px;min-height:36px;background:var(--input-bg)}
+    .settings-pattern-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 12px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px}
+    .settings-pattern-header span{font-size:.9rem;font-weight:700;color:#6d28d9}
   </style>
 </head>
 <body>
@@ -56,8 +67,21 @@
       <button class="settings-link" onclick="tg('settingsPanel')">⚙ 設定</button>
     </div>
 
+    <!-- パターン切替 -->
+    <div>
+      <div class="pattern-label">状況パターン</div>
+      <div class="pattern-bar" id="patternBar"></div>
+    </div>
+
     <section id="settingsPanel">
       <h2>設定</h2>
+      <div class="settings-pattern-header">
+        <span id="settingsPatternLabel">編集中：パターン1</span>
+      </div>
+      <div style="margin-bottom:10px">
+        <label>パターン名</label>
+        <input type="text" id="patternName" class="pattern-name-input" placeholder="例：通常、運動日、体調不良">
+      </div>
       <div class="grid grid-3">
         <div><label>朝 ICR</label><input type="number" id="icrBreakfast" value="10" inputmode="decimal"></div>
         <div><label>昼 ICR</label><input type="number" id="icrLunch" value="10" inputmode="decimal"></div>
@@ -78,7 +102,7 @@
         </div>
         <div><label>1回の最大投与量 (U)</label><input type="number" id="maxDose" placeholder="例: 30" inputmode="decimal"></div>
       </div>
-      <button id="resetSettings">設定リセット</button>
+      <button id="resetSettings">全パターン設定リセット</button>
     </section>
 
     <section>
@@ -118,6 +142,7 @@
 
     <section>
       <h2>結果</h2>
+      <div style="margin-bottom:6px"><span id="result-pattern" style="display:inline-block;font-size:.8rem;font-weight:700;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:6px;padding:3px 10px"></span></div>
       <div id="result-warn"></div>
       <div id="result-details"></div>
       <div class="result" id="result-total">推奨投与量：--- U</div>
@@ -126,13 +151,7 @@
     <section>
       <button onclick="tg('iobChartPanel')">📉 残存インスリン曲線（Walshモデル）を開く／閉じる</button>
       <div id="iobChartPanel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-          <h3 style="margin:0">残存インスリン曲線（Walshモデル）</h3>
-          <div>
-            <label><input type="radio" name="yScale" value="unit" checked> 単位（U）</label>
-            <label><input type="radio" name="yScale" value="pct"> ％表示</label>
-          </div>
-        </div>
+        <h3 style="margin:6px 0 0">残存インスリン曲線（Walshモデル）</h3>
         <div class="chart-wrap">
           <canvas id="iobCanvas" style="width:100%;height:200px"></canvas>
           <div style="font-size:12px; color:#64748b; margin-top:4px; text-align:right;" id="legendText"></div>
@@ -142,7 +161,7 @@
   </div>
 
   <script>
-    const K = "insulinCalcSettings_v9";
+    const STORAGE_KEY = "insulinCalcSettings_v10";
     const E = (id) => document.getElementById(id);
     const insulinOptions = [
       {value:'lumjev', label:'ルムジェブ（2.5h）'},
@@ -152,8 +171,34 @@
       {value:'novorapid', label:'ノボラピッド、アスパルト（5h）'},
       {value:'regular', label:'ノボリンR（6.5h）'}
     ];
-    // 設定の各食チェックボックスを生成
     const mealKeys = ['Breakfast','Lunch','Dinner'];
+
+    // デフォルトパターン定義
+    function defaultPattern(name){
+      return {
+        name: name,
+        icrBreakfast: '10', icrLunch: '10', icrDinner: '10',
+        isf: '50', target: '120', rounding: '0.5', maxDose: '',
+        insBreakfast: [], insLunch: [], insDinner: []
+      };
+    }
+    function defaultAllData(){
+      return {
+        activePattern: 0,
+        patterns: [
+          defaultPattern('通常'),
+          defaultPattern('運動日'),
+          defaultPattern('体調不良')
+        ],
+        // パターンに属さない入力値
+        prevDose: '10', elapsed: '2'
+      };
+    }
+
+    let appData = defaultAllData();
+    let activeIdx = 0;
+
+    // --- 設定の各食チェックボックスを生成 ---
     mealKeys.forEach(mk=>{
       const container = E('chk'+mk);
       insulinOptions.forEach(o=>{
@@ -166,6 +211,142 @@
         container.appendChild(lbl);
       });
     });
+
+    // --- パターンバー描画 ---
+    function renderPatternBar(){
+      const bar = E('patternBar');
+      bar.innerHTML = '';
+      appData.patterns.forEach((p, i)=>{
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pattern-btn' + (i === activeIdx ? ' active' : '');
+        btn.textContent = p.name || ('パターン'+(i+1));
+        btn.addEventListener('click', ()=> switchPattern(i));
+        bar.appendChild(btn);
+      });
+    }
+
+    // --- パターン切替 ---
+    function switchPattern(idx){
+      saveCurrentPatternToData();
+      activeIdx = idx;
+      appData.activePattern = idx;
+      loadPatternToUI(appData.patterns[idx]);
+      renderPatternBar();
+      updateSettingsHeader();
+      syncInsulinToMeal();
+      calc();
+      persistAll();
+    }
+
+    function updateSettingsHeader(){
+      const p = appData.patterns[activeIdx];
+      E('settingsPatternLabel').textContent = '編集中：' + (p.name || ('パターン'+(activeIdx+1)));
+    }
+
+    // --- UIにパターンを読み込み ---
+    function loadPatternToUI(p){
+      E('icrBreakfast').value = p.icrBreakfast || '10';
+      E('icrLunch').value = p.icrLunch || '10';
+      E('icrDinner').value = p.icrDinner || '10';
+      E('isf').value = p.isf || '50';
+      E('target').value = p.target || '120';
+      E('rounding').value = p.rounding || '0.5';
+      E('maxDose').value = p.maxDose || '';
+      E('patternName').value = p.name || '';
+      mealKeys.forEach(mk=>{
+        const saved = p['ins'+mk];
+        document.querySelectorAll('input[name="ins'+mk+'"]').forEach(cb=>{
+          cb.checked = Array.isArray(saved) && saved.includes(cb.value);
+        });
+      });
+    }
+
+    // --- 現在のUIからパターンデータを取得 ---
+    function saveCurrentPatternToData(){
+      const p = appData.patterns[activeIdx];
+      p.name = E('patternName').value;
+      p.icrBreakfast = E('icrBreakfast').value;
+      p.icrLunch = E('icrLunch').value;
+      p.icrDinner = E('icrDinner').value;
+      p.isf = E('isf').value;
+      p.target = E('target').value;
+      p.rounding = E('rounding').value;
+      p.maxDose = E('maxDose').value;
+      mealKeys.forEach(mk=>{
+        p['ins'+mk] = [...document.querySelectorAll('input[name="ins'+mk+'"]:checked')].map(cb=>cb.value);
+      });
+      // パターン外データ
+      appData.prevDose = E('prevDose').value;
+      appData.elapsed = E('elapsed').value;
+    }
+
+    // --- localStorage永続化 ---
+    function persistAll(){
+      saveCurrentPatternToData();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+    }
+
+    // --- 旧データマイグレーション ---
+    function migrateOldData(){
+      const oldKey = "insulinCalcSettings_v9";
+      const oldRaw = localStorage.getItem(oldKey);
+      if(!oldRaw) return null;
+      try {
+        const old = JSON.parse(oldRaw);
+        // 旧データを「通常」パターンとして取り込む
+        const p = defaultPattern('通常');
+        if(old.icrBreakfast) p.icrBreakfast = old.icrBreakfast;
+        if(old.icrLunch) p.icrLunch = old.icrLunch;
+        if(old.icrDinner) p.icrDinner = old.icrDinner;
+        if(old.isf) p.isf = old.isf;
+        if(old.target) p.target = old.target;
+        if(old.rounding) p.rounding = old.rounding;
+        if(old.maxDose) p.maxDose = old.maxDose;
+        mealKeys.forEach(mk=>{
+          if(Array.isArray(old['ins'+mk])) p['ins'+mk] = old['ins'+mk];
+        });
+        const data = defaultAllData();
+        data.patterns[0] = p;
+        if(old.prevDose) data.prevDose = old.prevDose;
+        if(old.elapsed) data.elapsed = old.elapsed;
+        return data;
+      } catch(e){ return null; }
+    }
+
+    function loadAll(){
+      let raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        try { appData = JSON.parse(raw); } catch(e){ appData = defaultAllData(); }
+      } else {
+        // 旧データマイグレーション
+        const migrated = migrateOldData();
+        if(migrated){
+          appData = migrated;
+        } else {
+          appData = defaultAllData();
+        }
+      }
+      // パターンが3つ未満なら補完
+      while(appData.patterns.length < 3){
+        appData.patterns.push(defaultPattern('パターン'+(appData.patterns.length+1)));
+      }
+      activeIdx = appData.activePattern || 0;
+      if(activeIdx >= appData.patterns.length) activeIdx = 0;
+
+      loadPatternToUI(appData.patterns[activeIdx]);
+      E('prevDose').value = appData.prevDose || '10';
+      E('elapsed').value = appData.elapsed || '2';
+
+      // 食事時間帯
+      const m = getMealByTime();
+      E('meal').value = m;
+      document.querySelectorAll('.meal-btn').forEach(b=>{
+        b.classList.toggle('active', b.dataset.meal === m);
+      });
+    }
+
+    // --- ユーティリティ ---
     const tg = (id) => {
       const p = E(id);
       p.style.display = (!p.style.display || p.style.display === "none") ? "block" : "none";
@@ -185,37 +366,6 @@
       const h = new Date().getHours();
       return h < 11 ? 'breakfast' : (h < 17 ? 'lunch' : 'dinner');
     }
-    function loadSettings(){
-      const s = JSON.parse(localStorage.getItem(K) || "{}");
-      for(const k in s){
-        const el = E(k);
-        if(el && el.tagName) el.value = s[k];
-      }
-      // 各食チェック状態を復元
-      mealKeys.forEach(mk=>{
-        const saved = s['ins'+mk];
-        if(Array.isArray(saved)){
-          document.querySelectorAll('input[name="ins'+mk+'"]').forEach(cb=>{
-            cb.checked = saved.includes(cb.value);
-          });
-        }
-      });
-      const m = getMealByTime();
-      E('meal').value = m;
-      document.querySelectorAll('.meal-btn').forEach(b=>{
-        b.classList.toggle('active', b.dataset.meal === m);
-      });
-    }
-    function saveSettings(){
-      const keys=['icrBreakfast','icrLunch','icrDinner','isf','target','rounding','insulinType','prevDose','elapsed','maxDose'];
-      const d={}; keys.forEach(k=>{ const el=E(k); if(el) d[k]=el.value; });
-      // 各食のチェック状態を保存
-      mealKeys.forEach(mk=>{
-        const checked = [...document.querySelectorAll('input[name="ins'+mk+'"]:checked')].map(cb=>cb.value);
-        d['ins'+mk] = checked;
-      });
-      localStorage.setItem(K, JSON.stringify(d));
-    }
     function updateIobQuestion(){
       const dur = getDur(E('insulinType').value);
       E('iobQuestion').textContent = `前回の注射から${dur}時間以上経過していますか？`;
@@ -227,7 +377,6 @@
       const checked = [...document.querySelectorAll('input[name="ins'+mk+'"]:checked')].map(cb=>cb.value);
       const sel = E('insulinType');
       const prev = sel.value;
-      // 選択肢を再構築（チェックされたもののみ）
       sel.innerHTML = '';
       const filtered = checked.length > 0 ? insulinOptions.filter(o=>checked.includes(o.value)) : insulinOptions;
       filtered.forEach(o=>{
@@ -235,14 +384,23 @@
         opt.value = o.value; opt.textContent = o.label;
         sel.appendChild(opt);
       });
-      // 以前の選択が残っていればそれを維持
       if(filtered.some(o=>o.value===prev)) sel.value = prev;
       updateIobQuestion();
     }
+
     E('resetSettings').addEventListener('click',()=>{
-      localStorage.removeItem(K);
-      alert('設定をリセットしました。');
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem("insulinCalcSettings_v9");
+      alert('全パターンの設定をリセットしました。');
       location.reload();
+    });
+
+    // パターン名の変更を即反映
+    E('patternName').addEventListener('input', ()=>{
+      appData.patterns[activeIdx].name = E('patternName').value;
+      renderPatternBar();
+      updateSettingsHeader();
+      persistAll();
     });
 
     let iobSkip = true;
@@ -255,7 +413,9 @@
     }
 
     function calc(){
-      saveSettings();
+      persistAll();
+      const curPattern = appData.patterns[activeIdx];
+      E('result-pattern').textContent = '適用中：' + (curPattern.name || ('パターン'+(activeIdx+1)));
       const b=+E('icrBreakfast').value||0, l=+E('icrLunch').value||0, dn=+E('icrDinner').value||0;
       const isf=+E('isf').value||0, target=+E('target').value||0, round=+E('rounding').value||0.5;
       const meal=E('meal').value;
@@ -331,8 +491,7 @@
       resizeCanvas();
       const w = canvas.clientWidth, h = canvas.clientHeight;
       const pL=40, pR=16, pT=16, pB=26;
-      const yMode = (document.querySelector('input[name="yScale"]:checked')||{value:'unit'}).value;
-      const maxY = (yMode==='pct') ? 100 : Math.max((dose>0?dose:1), 1);
+      const maxY = Math.max((dose>0?dose:1), 1);
       const xToPx = t => pL + ((w - pL - pR) * (t / dur));
       const yToPx = v => h - pB - ((h - pT - pB) * (v / maxY));
       const walshFrac = x => (x>=1)?0:(1 - (3*x*x - 2*x*x*x));
@@ -341,13 +500,11 @@
       ctx.clearRect(0,0,w,h);
       ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
 
-      // --- Fill: consumed area (0 to elapsed, under curve) ---
       const clamped = Math.min(Math.max(elapsed,0), dur);
       const xe = clamped/dur;
       const fr = walshFrac(xe);
-      const valE = (yMode==='pct') ? fr*100 : dose*fr;
+      const valE = dose*fr;
       const mx = xToPx(clamped), my = yToPx(valE);
-      const topY = yToPx(maxY);
       const bottomY = yToPx(0);
 
       ctx.fillStyle = 'rgba(234, 88, 12, 0.15)';
@@ -356,76 +513,65 @@
       for(let i=0;i<=STEPS;i++){
         const t = clamped*(i/STEPS);
         const fv = walshFrac(t/dur);
-        const val = (yMode==='pct') ? fv*100 : dose*fv;
+        const val = dose*fv;
         ctx.lineTo(xToPx(t), yToPx(val));
       }
       ctx.lineTo(mx, bottomY);
       ctx.closePath(); ctx.fill();
 
-      // --- Fill: remaining area (elapsed to end, under curve) ---
       ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
       ctx.beginPath();
       ctx.moveTo(mx, bottomY);
       for(let i=0;i<=STEPS;i++){
         const t = clamped + (dur-clamped)*(i/STEPS);
         const fv = walshFrac(t/dur);
-        const val = (yMode==='pct') ? fv*100 : dose*fv;
+        const val = dose*fv;
         ctx.lineTo(xToPx(t), yToPx(val));
       }
       ctx.lineTo(xToPx(dur), bottomY);
       ctx.closePath(); ctx.fill();
 
-      // --- Horizontal dashed line at current remaining level ---
       ctx.strokeStyle = 'rgba(37, 99, 235, 0.4)';
       ctx.setLineDash([3,3]); ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(pL, my); ctx.lineTo(mx, my); ctx.stroke();
       ctx.setLineDash([]);
 
-      // Grid
       ctx.strokeStyle = '#e2e8f0'; ctx.beginPath();
       const hourStep = Math.max(1, Math.round(dur/6));
       for(let th=0;th<=dur;th+=hourStep){ const x=xToPx(th); ctx.moveTo(x,pT); ctx.lineTo(x,h-pB); }
       [0,.25,.5,.75,1].forEach(f=>{ const y=yToPx(maxY*f); ctx.moveTo(pL,y); ctx.lineTo(w-pR,y); });
       ctx.stroke();
 
-      // Axes
       ctx.strokeStyle='#94a3b8'; ctx.beginPath(); ctx.moveTo(pL,pT); ctx.lineTo(pL,h-pB); ctx.lineTo(w-pR,h-pB); ctx.stroke();
 
-      // Axis labels
       ctx.fillStyle='#334155'; ctx.font='12px system-ui'; ctx.textAlign='center';
       for(let th=0;th<=dur;th+=hourStep) ctx.fillText(th.toString(), xToPx(th), h-6);
       ctx.save(); ctx.translate(10,(h-pB+pT)/2); ctx.rotate(-Math.PI/2);
-      ctx.fillText(yMode==='pct'?'残存[%]':'残存[U]',0,0); ctx.restore();
+      ctx.fillText('残存[U]',0,0); ctx.restore();
 
-      // Curve
       ctx.strokeStyle='#1e40af'; ctx.lineWidth=2; ctx.beginPath();
       let first=true;
       for(let i=0;i<=STEPS;i++){
         const t=dur*(i/STEPS), fv=walshFrac(t/dur);
-        const val=(yMode==='pct')?fv*100:dose*fv;
+        const val=dose*fv;
         const px=xToPx(t), py=yToPx(val);
         if(first){ctx.moveTo(px,py);first=false;}else ctx.lineTo(px,py);
       }
       ctx.stroke(); ctx.lineWidth=1;
 
-      // Vertical marker line
       ctx.strokeStyle='#dc2626'; ctx.setLineDash([4,4]);
       ctx.beginPath(); ctx.moveTo(mx,pT); ctx.lineTo(mx,h-pB); ctx.stroke();
       ctx.setLineDash([]);
 
-      // Marker dot
       ctx.fillStyle='#dc2626';
       ctx.beginPath(); ctx.arc(mx,my,5,0,Math.PI*2); ctx.fill();
       ctx.strokeStyle='#fff'; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(mx,my,5,0,Math.PI*2); ctx.stroke();
       ctx.lineWidth=1;
 
-      // --- Label next to marker ---
       const iobU = dose*fr;
       const iobPct = Math.round(fr*100);
-      const labelText = (yMode==='pct')
-        ? iobPct+'%'
-        : fmt(iobU)+' U ('+iobPct+'%)';
+      const labelText = fmt(iobU)+' U ('+iobPct+'%)';
       ctx.font='bold 12px system-ui'; ctx.textAlign='left';
       const labelX=mx+8, labelY=my-8;
       const tm=ctx.measureText(labelText);
@@ -448,7 +594,6 @@
       ctx.lineWidth=1; ctx.fillStyle='#dc2626'; ctx.textAlign='left';
       ctx.fillText(labelText, actualLabelX, labelY);
 
-      // --- Legend with summary badge ---
       const legendEl = E('legendText');
       const remainU = fmt(iobU);
       const doseStr = dose>0?dose:0;
@@ -460,9 +605,16 @@
         '</div>';
     }
 
-    document.querySelectorAll('input,select').forEach(e=>{ e.addEventListener('input',calc); e.addEventListener('change',calc); });
-    E('insulinType').addEventListener('change', updateIobQuestion);
-    document.querySelectorAll('input[name="yScale"]').forEach(e=> e.addEventListener('change',calc) );
+    // --- イベントリスナー ---
+    document.querySelectorAll('#settingsPanel input, #settingsPanel select').forEach(e=>{
+      e.addEventListener('input', ()=>{ persistAll(); calc(); });
+      e.addEventListener('change', ()=>{ persistAll(); calc(); });
+    });
+    document.querySelectorAll('#carbs, #bg, #prevDose, #elapsed').forEach(e=>{
+      e.addEventListener('input', calc);
+      e.addEventListener('change', calc);
+    });
+    E('insulinType').addEventListener('change', ()=>{ updateIobQuestion(); calc(); });
     window.addEventListener('resize', ()=>{ clearTimeout(window._r); window._r = setTimeout(calc,150); } );
 
     // 食事時間帯ボタン
@@ -478,18 +630,22 @@
       b.addEventListener('click', ()=> setMeal(b.dataset.meal));
     });
 
-    // フォーカス時に全選択（タップ→即上書き可能）
+    // フォーカス時に全選択
     document.querySelectorAll('input[type="number"]').forEach(el=>{
       el.addEventListener('focus', ()=>{ el.select(); });
     });
 
-    // 設定のインスリンチェック変更 → 毎回入力エリアの選択肢を更新
+    // 設定のインスリンチェック変更
     document.querySelectorAll('.ins-check-group input[type="checkbox"]').forEach(cb=>{
-      cb.addEventListener('change', ()=>{ syncInsulinToMeal(); calc(); });
+      cb.addEventListener('change', ()=>{ syncInsulinToMeal(); persistAll(); calc(); });
     });
 
-    // init
-    loadSettings(); syncInsulinToMeal(); calc();
+    // --- 初期化 ---
+    loadAll();
+    renderPatternBar();
+    updateSettingsHeader();
+    syncInsulinToMeal();
+    calc();
 
     // PWA register
     if('serviceWorker' in navigator){
